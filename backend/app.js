@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-
+import nodemailer from "nodemailer";
 import bodyParser from "body-parser";
 import express from "express";
 
@@ -18,6 +18,16 @@ app.use((req, res, next) => {
 app.get("/meals", async (req, res) => {
   const meals = await fs.readFile("./data/available-meals.json", "utf8");
   res.json(JSON.parse(meals));
+});
+
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: "laravel.praksa@gmail.com",
+    pass: "gunoywskehatnetz",
+  },
 });
 
 app.post("/orders", async (req, res) => {
@@ -59,6 +69,28 @@ app.post("/orders", async (req, res) => {
   const allOrders = JSON.parse(orders);
   allOrders.push(newOrder);
   await fs.writeFile("./data/orders.json", JSON.stringify(allOrders));
+
+  try {
+    const productList = orderData.items
+      .map((item) => `- ${item.name} (${item.price})`)
+      .join("\n");
+    const productListHtml = orderData.items
+      .map((item) => `<li>${item.name} (${item.price})</li>`)
+      .join("");
+
+    await transporter.sendMail({
+      from: '"Shop App" <laravel.praksa@gmail.com>',
+      to: orderData.customer.email,
+      subject: "Order Confirmation",
+      text: `Hello ${orderData.customer.name},\n\nYour order was successfully placed with the following items:\n${productList}`,
+      html: `<p>Hello <b>${orderData.customer.name}</b>,</p>
+           <p>Your order was successfully placed with the following items:</p>
+           <ul>${productListHtml}</ul>`,
+    });
+  } catch (err) {
+    console.error("Error sending email:", err);
+  }
+
   res.status(201).json({ message: "Order created!" });
 });
 
