@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import nodemailer from "nodemailer";
 import bodyParser from "body-parser";
 import express from "express";
-
+import "dotenv/config";
 const app = express();
 
 app.use(bodyParser.json());
@@ -25,8 +25,8 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: "laravel.praksa@gmail.com",
-    pass: "gunoywskehatnetz",
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
